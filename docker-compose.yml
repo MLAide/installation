@@ -1,0 +1,171 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:4.4
+    container_name: mongo
+    hostname: mongo
+    restart: unless-stopped
+    ports:
+      - $MONGO_PORT:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=$MONGO_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_ROOT_PASSWORD
+      - MONGO_INITDB_DATABASE=$MONGO_DB
+      - MONGO_DB_USERNAME=$MONGO_DB_USERNAME
+      - MONGO_DB_PASSWORD=$MONGO_DB_PASSWORD
+    volumes:
+      - $DATA_PATH/mongodb/data:/data/db/
+      - $DATA_PATH/mongodb/log:/var/log/mongodb/
+      - $MONGO_INITDB_SCRIPTS_HOST_PATH:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    command: ["--bind_ip", "0.0.0.0"]
+
+  webserver:
+    #command: java -Djava.security.egd=file:/dev/./urandom -jar /app.jar
+    image: mlaide/webserver
+    container_name: mlaide-webserver
+    restart: on-failure
+    depends_on:
+      - mongo
+      - keycloak.mlaide
+      - minio-nginx
+    ports:
+      - $SERVER_PORT:8080
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_APPLICATION_NAME=$APP_NAME
+      - SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=$MONGO_DB
+      - SPRING_DATA_MONGODB_AUTO_INDEX_CREATION=$MONGO_AUTO_INDEX_CREATION
+      - SPRING_DATA_MONGODB_HOST=mongo
+      - SPRING_DATA_MONGODB_PORT=27017
+      - SPRING_DATA_MONGODB_USERNAME=$MONGO_DB_USERNAME
+      - SPRING_DATA_MONGODB_PASSWORD=$MONGO_DB_PASSWORD
+      - SPRING_DATA_MONGODB_DATABASE=$MONGO_DB
+      - LOGGING_LEVEL_ROOT=$MLAIDE_SERVER_LOG_LEVEL
+      - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=$MLAIDE_SERVER_AUTH_JWK_SET_URI
+      - mlaide.security.audience=$MLAIDE_SERVER_AUTH_AUDIENCE
+      - mlaide.user-info.uri=$MLAIDE_SERVER_AUTH_USER_INFO_ENDPOINT
+      - mlaide.user-info.nickname-property=$MLAIDE_SERVER_AUTH_USER_INFO_NICKNAME_PROPERTY
+      - mlaide.object-storage.endpoint=$S3_ENDPOINT
+      - mlaide.object-storage.credentials.access-key=$S3_ACCESS_KEY
+      - mlaide.object-storage.credentials.secret-key=$S3_SECRET_KEY
+      - mlaide.object-storage.region=$S3_REGION
+      - mlaide.cors.allowed-origins=http://$HOST_NAME:$UI_PORT
+
+  web-ui:
+    image: mlaide/web-ui
+    container_name: mlaide-web-ui
+    restart: on-failure
+    depends_on:
+      - keycloak.mlaide
+    ports:
+      - $UI_PORT:80
+    environment:
+      - API_URL=http://$HOST_NAME:$SERVER_PORT
+      - API_VERSION=v1
+      - AUTH_ALLOWED_URLS=http://$HOST_NAME:$SERVER_PORT
+      - AUTH_CLIEND_ID=$MLAIDE_UI_AUTH_CLIENT_ID
+      - AUTH_ISSUER=$MLAIDE_UI_AUTH_ISSUER
+      - AUTH_SCOPE=$MLAIDE_UI_AUTH_SCOPES
+      - AUTH_DISABLE_SECURITY=true
+
+  keycloak.mlaide:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    restart: unless-stopped
+    ports:
+      - $KEYCLOAK_PORT:8080
+    environment:
+      - KEYCLOAK_USER=$KEYCLOAK_ADMIN_USER
+      - KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD
+      - KEYCLOAK_IMPORT=/tmp/default-config.json
+    volumes:
+      - $KEYCLOAK_CONFIGURATION:/tmp/default-config.json
+
+  minio1:
+    image: minio/minio:RELEASE.2020-10-09T22-55-05Z
+    volumes:
+      - $DATA_PATH/minio/data1-1:/data1
+      - $DATA_PATH/minio/data1-2:/data2
+    expose:
+      - "9000"
+    environment:
+      - MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
+      - MINIO_SECRET_KEY=$MINIO_SECRET_KEY
+    command: server http://minio{1...4}/data{1...2}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio2:
+    image: minio/minio:RELEASE.2020-10-09T22-55-05Z
+    volumes:
+      - $DATA_PATH/minio/data2-1:/data1
+      - $DATA_PATH/minio/data2-2:/data2
+    expose:
+      - "9000"
+    environment:
+      - MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
+      - MINIO_SECRET_KEY=$MINIO_SECRET_KEY
+    command: server http://minio{1...4}/data{1...2}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio3:
+    image: minio/minio:RELEASE.2020-10-09T22-55-05Z
+    volumes:
+      - $DATA_PATH/minio/data3-1:/data1
+      - $DATA_PATH/minio/data3-2:/data2
+    expose:
+      - "9000"
+    environment:
+      - MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
+      - MINIO_SECRET_KEY=$MINIO_SECRET_KEY
+    command: server http://minio{1...4}/data{1...2}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio4:
+    image: minio/minio:RELEASE.2020-10-09T22-55-05Z
+    volumes:
+      - $DATA_PATH/minio/data4-1:/data1
+      - $DATA_PATH/minio/data4-2:/data2
+    expose:
+      - "9000"
+    environment:
+      - MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY
+      - MINIO_SECRET_KEY=$MINIO_SECRET_KEY
+    command: server http://minio{1...4}/data{1...2}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio-nginx:
+    image: nginx:1.19.2-alpine
+    hostname: minio-nginx
+    volumes:
+      - ./minio/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - $MINIO_PORT:9000
+    depends_on:
+      - minio1
+      - minio2
+      - minio3
+      - minio4
