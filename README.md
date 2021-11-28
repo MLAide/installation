@@ -3,11 +3,11 @@ This repostiory contains installation templates for [ML Aide](https://mlaide.com
 
 1. all-in-one
   This setup contains a Docker Compose based setup that includes the following components:
-  - ML Aide UI
-  - ML Aide Server
-  - Keycloak Authorization Server
-  - MongoDB
-  - min.io (S3 storage)
+    - ML Aide UI
+    - ML Aide Server
+    - Keycloak Authorization Server
+    - MongoDB
+    - min.io (S3 storage)
 
 2. mlaide-and-authorization-server-seperated
   This setup contains the same components as the previous one. The only difference is, that the Keycloak
