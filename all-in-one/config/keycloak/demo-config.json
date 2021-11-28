@@ -724,7 +724,7 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "0b53b4d5-8235-4304-9530-2326c3f8ca37",
       "redirectUris": [
-        "http://example.com:8880"
+        "http://example.com:8880/*"
       ],
       "webOrigins": [
         "*"

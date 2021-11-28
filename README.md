@@ -19,7 +19,7 @@ To run the all-in-one setup execute the following steps:
 1. open & edit the `all-in-one/start.sh` file. Basically you just need to change the value of `HOST_NAME` to the value 
 of your DNS record, that points to your target server.
 2. open & edit the `all-in-one/config/keycloak/demo-config.json` file. Go to `clients[4].redirectUris` (approx in line 727) 
-and replace the existing value with `http://<your-host-name>:8880` (use the same host name as in step 1).
+and replace the existing value with `http://<your-host-name>:8880/*` (use the same host name as in step 1).
 3. copy & paste the whole directory `all-in-one` to your target server.
 4. `cd` into the copied directory and run `./start.sh` (if you need to use sudo for docker command, than.
 you need to run `sudo ./start.sh`)
