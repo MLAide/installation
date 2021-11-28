@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  keycloak.mlaide:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    # hostname: keycloak.mlaide
+    restart: unless-stopped
+    ports:
+      - $KEYCLOAK_PORT:8080
+    # command: -Djboss.http.port=$KEYCLOAK_PORT
+    environment:
+      - KEYCLOAK_USER=$KEYCLOAK_ADMIN_USER
+      - KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD
+      - KEYCLOAK_IMPORT=/tmp/default-config.json
+    volumes:
+      - $KEYCLOAK_CONFIGURATION:/tmp/default-config.json
